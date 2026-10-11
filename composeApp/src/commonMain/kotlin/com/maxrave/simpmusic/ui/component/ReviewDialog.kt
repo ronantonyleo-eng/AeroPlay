@@ -1,11 +1,13 @@
 package com.maxrave.simpmusic.ui.component
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -15,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.unit.dp
 import com.maxrave.simpmusic.ui.theme.seed
 import com.maxrave.simpmusic.ui.theme.typo
 import org.jetbrains.compose.resources.painterResource
@@ -59,7 +62,11 @@ fun ReviewDialog(
             }
         },
         icon = {
-            Icon(painterResource(Res.drawable.mono), "App Icon")
+            Image(
+                painter = painterResource(Res.drawable.aero_final),
+                contentDescription = "App Icon",
+                modifier = Modifier.size(48.dp),
+            )
         },
         title = {
             Text(

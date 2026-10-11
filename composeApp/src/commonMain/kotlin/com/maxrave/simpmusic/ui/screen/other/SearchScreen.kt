@@ -1,5 +1,8 @@
 package com.maxrave.simpmusic.ui.screen.other
 
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -10,6 +13,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -151,6 +155,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import simpmusic.composeapp.generated.resources.Res
+import simpmusic.composeapp.generated.resources.aero_bg
 import simpmusic.composeapp.generated.resources.albums
 import simpmusic.composeapp.generated.resources.artists
 import simpmusic.composeapp.generated.resources.clear_search_history
@@ -166,6 +171,24 @@ import simpmusic.composeapp.generated.resources.search_for_songs_artists_albums_
 import simpmusic.composeapp.generated.resources.song
 import simpmusic.composeapp.generated.resources.videos
 import simpmusic.composeapp.generated.resources.what_do_you_want_to_listen_to
+
+
+// ─── AeroPlay chrome / holographic search-bar visuals ──────────────────────
+private val AeroChromeShape = RoundedCornerShape(28.dp)
+private val AeroChromeBorder = Color(0x99FFFFFF)
+private val AeroHoloTint = listOf(
+    Color(0x337BD9FF), // pale cyan
+    Color(0x33C7B4FF), // pale purple
+    Color(0x33FFB4E1), // pale pink
+    Color(0x337BD9FF), // cyan again so it loops
+)
+private val AeroChromeSilver = listOf(
+    Color(0xFFE8ECF2),
+    Color(0xFFB8BFC8),
+    Color(0xFF8E949C),
+    Color(0xFFB8BFC8),
+    Color(0xFFE8ECF2),
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -377,6 +400,14 @@ fun SearchScreen(
                 .fillMaxSize()
                 .background(Color.Transparent),
     ) {
+        Image(
+            painter = painterResource(Res.drawable.aero_bg),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.35f,
+        )
+
         // Content scrolls under the bar (it is the haze source), so it needs top padding
         // equal to the bar's measured height to keep its first item clear of it.
         Crossfade(
@@ -1010,6 +1041,52 @@ fun SearchScreen(
             )
         }
         // Search Bar with Animated Placeholder
+        // ─── AeroPlay chrome-framed search bar ─────────────────────────────────
+        // Chrome bezel (silver gradient background + drop shadow + outer border)
+        // surrounds a translucent holographic inner surface. The SearchBar itself is
+        // kept transparent so the chrome shows through it.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(elevation = 10.dp, shape = AeroChromeShape, clip = false)
+                    .clip(AeroChromeShape)
+                    .background(Brush.horizontalGradient(AeroChromeSilver))
+                    .border(2.dp, AeroChromeBorder, AeroChromeShape)
+                    .padding(3.dp),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(AeroChromeShape)
+                        .background(Color(0x33000000)),
+            ) {
+                // Holographic inner tint (soft cyan/purple/pink sweep)
+                Box(
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .background(Brush.horizontalGradient(AeroHoloTint)),
+                )
+                // Glossy top highlight — a thin white streak across the top edge
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .align(Alignment.TopCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0x99FFFFFF), Color(0x00FFFFFF)),
+                                ),
+                            ),
+                )
+
+        // Translucent search bar: a soft, semi-transparent surface that lets the
+        // background artwork show through, with a subtle light border so the pill
+        // stays visible over busy imagery.
         SearchBar(
             inputField = {
                 SearchBarDefaults.InputField(
@@ -1018,10 +1095,6 @@ fun SearchScreen(
                         searchText = newText
                     },
                     onSearch = { query ->
-                        // A pasted YouTube link is a destination, not a query. Translating it into
-                        // the app's own deep link hands it to the same intent flow that handles
-                        // shared links, so it plays or opens straight away instead of being
-                        // searched for as text. Anything else falls through to a normal search.
                         val deepLink = query.toAppDeepLinkOrNull()
                         if (deepLink != null) {
                             focusManager.clearFocus()
@@ -1046,7 +1119,6 @@ fun SearchScreen(
                     onExpandedChange = {},
                     enabled = true,
                     placeholder = {
-                        // Animated placeholder text
                         AnimatedContent(
                             targetState = currentPlaceholderIndex,
                             transitionSpec = {
@@ -1063,6 +1135,7 @@ fun SearchScreen(
                             Text(
                                 text = placeholderTexts[index],
                                 style = typo().labelMedium,
+                                color = Color(0xCCFFFFFF),
                             )
                         }
                     },
@@ -1070,10 +1143,10 @@ fun SearchScreen(
                         Icon(
                             imageVector = SimpIcons.Search,
                             contentDescription = "Search",
+                            tint = Color(0xCCFFFFFF),
                         )
                     },
                     trailingIcon = {
-                        // X button only shows when there's text
                         if (searchText.isNotEmpty()) {
                             IconButton(
                                 modifier = Modifier.clip(CircleShape),
@@ -1085,10 +1158,27 @@ fun SearchScreen(
                                 Icon(
                                     imageVector = SimpIcons.Close,
                                     contentDescription = "Clear search",
+                                    tint = Color(0xCCFFFFFF),
                                 )
                             }
                         }
                     },
+                    // Translucent inner field: everything see-through.
+                    colors =
+                        SearchBarDefaults.inputFieldColors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Color.White,
+                            focusedPlaceholderColor = Color(0xCCFFFFFF),
+                            unfocusedPlaceholderColor = Color(0xCCFFFFFF),
+                            focusedLeadingIconColor = Color(0xCCFFFFFF),
+                            unfocusedLeadingIconColor = Color(0xCCFFFFFF),
+                            focusedTrailingIconColor = Color(0xCCFFFFFF),
+                            unfocusedTrailingIconColor = Color(0xCCFFFFFF),
+                        ),
                 )
             },
             expanded = false,
@@ -1096,15 +1186,30 @@ fun SearchScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0x22000000))            // ~20% white translucent fill
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x55FFFFFF),            // soft light border
+                        shape = RoundedCornerShape(28.dp),
+                    )
                     .focusRequester(focusRequester)
                     .onFocusChanged {
                         isFocused = it.isFocused
-                    }.padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(8.dp),
-            // See the note on SongSelectionTopAppBar above — the Column owns the status-bar inset.
+                    },
+            shape = RoundedCornerShape(24.dp),
+            // Fully transparent so only the box we just drew is visible.
+            colors =
+                SearchBarDefaults.colors(
+                    containerColor = Color.Transparent,
+                    dividerColor = Color.Transparent,
+                ),
             windowInsets = WindowInsets(0),
             content = {},
         )
+            }
+        }
                 // Filter chips ride along inside the blurred block instead of sitting in the
                 // results branch. That way searchBarHeight covers them too, results scroll
                 // underneath the whole thing, and the glass has something to blur.

@@ -6,6 +6,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -51,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -98,6 +101,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import simpmusic.composeapp.generated.resources.Res
+import simpmusic.composeapp.generated.resources.aero_bg
 import simpmusic.composeapp.generated.resources.chart
 import simpmusic.composeapp.generated.resources.create
 import simpmusic.composeapp.generated.resources.downloaded_playlists
@@ -213,10 +217,19 @@ fun LibraryScreen(
         }
     }
 
-    Crossfade(
-        modifier = Modifier.hazeSource(hazeState),
-        targetState = currentFilter,
-    ) { filter ->
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(Res.drawable.aero_bg),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.35f,
+        )
+
+        Crossfade(
+            modifier = Modifier.fillMaxSize().hazeSource(hazeState),
+            targetState = currentFilter,
+        ) { filter ->
         when (filter) {
             LibraryChipType.YOUR_LIBRARY -> {
                 val state = rememberLazyListState()
@@ -366,6 +379,7 @@ fun LibraryScreen(
                     viewModel.getMonthlyRecaps()
                 }
             }
+        }
         }
     }
     val coroutineScope = rememberCoroutineScope()

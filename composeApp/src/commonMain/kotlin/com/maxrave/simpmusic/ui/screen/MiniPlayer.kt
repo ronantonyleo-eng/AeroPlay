@@ -23,6 +23,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -151,6 +152,25 @@ import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "MiniPlayer"
+
+// ─── AeroPlay mini-player visuals ───────────────────────────────────────────
+private val AeroCardShape = RoundedCornerShape(14.dp)
+private val AeroCardBackground = Color(0xE60A0A0A)
+private val AeroCardBorder = Color(0x44FFFFFF)
+private val AeroRainbow = listOf(
+    Color(0xFFFF3B3B),
+    Color(0xFFFF9A3B),
+    Color(0xFFFFE23B),
+    Color(0xFF52E37A),
+    Color(0xFF3BC8FF),
+    Color(0xFF6A6AFF),
+    Color(0xFFB44BFF),
+    Color(0xFFFF3B3B),
+)
+private val AeroSelectedGlow = Color(0x33FFFFFF)
+private val AeroSelectedBorder = Color(0x66FFFFFF)
+private val AeroSilver = Color(0xFFB8B8B8)
+private val AeroWhite = Color(0xFFFFFFFF)
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -290,27 +310,18 @@ fun MiniPlayer(
     }
 
     if (getPlatform() == Platform.Android) {
-        // One shape for both the Card and the clip below. They must not diverge: the clip wraps
-        // the Card's own background draw, so the larger radius wins and silently becomes the
-        // visible one.
-        val miniPlayerShape = CircleShape
-        // Without glass the card follows the theme, not the playing artwork.
+        // AeroPlay: rounded glass card with chrome border and a rainbow underline.
+        val miniPlayerShape = AeroCardShape
+        // When Liquid Glass is ON, the Card is transparent (the glass shader draws the surface).
+        // When OFF, we draw our own dark-glass AeroPlay surface.
         val cardColor =
             if (isLiquidGlassEnabled == DataStoreManager.TRUE) {
                 Color.Transparent
             } else {
-                // Same 85% as the bottom bar capsule, so the two floating surfaces read as one set.
-                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f)
+                AeroCardBackground
             }
-        // The flat (default) card: round artwork and controls sitting in filled circles. Glass keeps its own look.
         val isFlat = isLiquidGlassEnabled != DataStoreManager.TRUE
-        Card(
-            shape = miniPlayerShape,
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = cardColor,
-                    disabledContainerColor = cardColor,
-                ),
+        Box(
             modifier =
                 modifier
                     .then(
@@ -319,42 +330,48 @@ fun MiniPlayer(
                         } else {
                             Modifier
                         },
-                    ).then(
-                        Modifier
-                            .clip(miniPlayerShape)
-                            .offset { IntOffset(0, offsetY.value.roundToInt()) }
-                            .clickable(
-                                onClick = onClick,
-                            ).pointerInput(Unit) {
-                                detectVerticalDragGestures(
-                                    onDragStart = {
-                                    },
-                                    onVerticalDrag = { change: PointerInputChange, dragAmount: Float ->
-                                        if (offsetY.value + dragAmount > 0) {
-                                            coroutineScope.launch {
-                                                change.consume()
-                                                offsetY.animateTo(offsetY.value + 2 * dragAmount)
-                                                Logger.w("MiniPlayer", "Dragged ${offsetY.value}")
-                                            }
-                                        }
-                                    },
-                                    onDragCancel = {
-                                        coroutineScope.launch {
-                                            offsetY.animateTo(0f)
-                                        }
-                                    },
-                                    onDragEnd = {
-                                        Logger.w("MiniPlayer", "Drag Ended")
-                                        coroutineScope.launch {
-                                            if (offsetY.value > 70) {
-                                                onClose()
-                                            }
-                                            offsetY.animateTo(0f)
-                                        }
-                                    },
-                                )
+                    )
+                    .clip(miniPlayerShape)
+                    .then(
+                        if (isFlat) {
+                            Modifier
+                                .background(AeroCardBackground)
+                                .border(1.dp, AeroCardBorder, miniPlayerShape)
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .offset { IntOffset(0, offsetY.value.roundToInt()) }
+                    .clickable(onClick = onClick)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onDragStart = {
                             },
-                    ),
+                            onVerticalDrag = { change: PointerInputChange, dragAmount: Float ->
+                                if (offsetY.value + dragAmount > 0) {
+                                    coroutineScope.launch {
+                                        change.consume()
+                                        offsetY.animateTo(offsetY.value + 2 * dragAmount)
+                                        Logger.w("MiniPlayer", "Dragged ${offsetY.value}")
+                                    }
+                                }
+                            },
+                            onDragCancel = {
+                                coroutineScope.launch {
+                                    offsetY.animateTo(0f)
+                                }
+                            },
+                            onDragEnd = {
+                                Logger.w("MiniPlayer", "Drag Ended")
+                                coroutineScope.launch {
+                                    if (offsetY.value > 70) {
+                                        onClose()
+                                    }
+                                    offsetY.animateTo(0f)
+                                }
+                            },
+                        )
+                    },
         ) {
             Box(modifier = Modifier.fillMaxHeight()) {
                 Row(
@@ -440,8 +457,8 @@ fun MiniPlayer(
                                     placeholder = rememberHolderPainter(),
                                     error = rememberHolderPainter(),
                                     contentDescription = null,
-                                    // Crop in the circle: FillWidth would leave bands around a 16:9 video thumbnail.
-                                    contentScale = if (isFlat) ContentScale.Crop else ContentScale.FillWidth,
+                                    // Fill the artwork viewport instead of letterboxing wide video thumbnails.
+                                    contentScale = ContentScale.Crop,
                                     modifier =
                                         Modifier
                                             .size(if (isFlat) 26.dp else 40.dp)
@@ -544,13 +561,14 @@ fun MiniPlayer(
                             if (isFlat) {
                                 Modifier
                                     .size(controlSize)
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape)
+                                    .background(AeroSelectedGlow, CircleShape)
+                                    .border(1.dp, AeroSelectedBorder, CircleShape)
                             } else {
                                 Modifier
                             },
                         contentAlignment = Alignment.Center,
                     ) {
-                        HeartCheckBox(checked = liked, size = 30, tint = textColor) {
+                        HeartCheckBox(checked = liked, size = 30, tint = if (isFlat) AeroWhite else textColor) {
                             sharedViewModel.onUIEvent(UIEvent.ToggleLike)
                         }
                     }
@@ -559,7 +577,15 @@ fun MiniPlayer(
                         modifier =
                             Modifier
                                 .size(controlSize)
-                                .then(if (isFlat) Modifier.background(MaterialTheme.colorScheme.primary, CircleShape) else Modifier),
+                                .then(
+                                    if (isFlat) {
+                                        Modifier
+                                            .background(AeroSelectedGlow, CircleShape)
+                                            .border(1.dp, AeroSelectedBorder, CircleShape)
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Crossfade(targetState = loading, label = "") {
@@ -567,12 +593,16 @@ fun MiniPlayer(
                                 Box(modifier = Modifier.size(controlSize), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(18.dp),
-                                        color = playColor,
+                                        color = if (isFlat) AeroWhite else playColor,
                                         strokeWidth = 3.dp,
                                     )
                                 }
                             } else {
-                                PlayPauseButton(isPlaying = isPlaying, modifier = Modifier.size(controlSize), tint = playColor) {
+                                PlayPauseButton(
+                                    isPlaying = isPlaying,
+                                    modifier = Modifier.size(controlSize),
+                                    tint = if (isFlat) AeroWhite else playColor,
+                                ) {
                                     sharedViewModel.onUIEvent(UIEvent.PlayPause)
                                 }
                             }
@@ -581,6 +611,7 @@ fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(if (isFlat) 8.dp else 15.dp))
                 }
+                // The flat card shows progress as the ring around its artwork instead.
                 // The flat card shows progress as the ring around its artwork instead.
                 if (!isFlat) {
                     Box(
@@ -607,6 +638,17 @@ fun MiniPlayer(
                             drawStopIndicator = {},
                         )
                     }
+                }
+                // AeroPlay: rainbow underline across the bottom edge of the flat card.
+                if (isFlat) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(2.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(Brush.horizontalGradient(AeroRainbow)),
+                    )
                 }
             }
         }

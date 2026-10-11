@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import simpmusic.composeapp.generated.resources.Res
-import simpmusic.composeapp.generated.resources.mono
+import simpmusic.composeapp.generated.resources.aero_final
 
 /**
  * The card's preferred width — a ceiling, not a fixed size.
@@ -146,21 +145,11 @@ internal fun ShareLyricsCard(
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Disc + glyph, the way Spotify signs its card. The circle is filled with the content
-            // colour and the logo prints on it through shareTintOn — the same rule as every other
-            // inverted surface here, so the mark keeps the song's hue and still reads on a
-            // near-white palette swatch as well as on a dark one.
-            Box(
-                modifier = Modifier.size(14.dp).clip(CircleShape).background(content),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.mono),
-                    contentDescription = null,
-                    tint = background.shareTintOn(content),
-                    modifier = Modifier.size(10.dp),
-                )
-            }
+            Image(
+                painter = painterResource(Res.drawable.aero_final),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "SimpMusic",

@@ -1,16 +1,33 @@
 package com.maxrave.simpmusic.ui.component
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,13 +35,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.maxrave.simpmusic.Platform
 import com.maxrave.simpmusic.extension.greyScale
+import com.maxrave.simpmusic.getPlatform
 import com.maxrave.simpmusic.ui.navigation.destination.home.AnalyticsDestination
 import com.maxrave.simpmusic.ui.navigation.destination.home.HomeDestination
 import com.maxrave.simpmusic.ui.navigation.destination.library.LibraryDestination
@@ -36,13 +57,23 @@ import org.jetbrains.compose.resources.stringResource
 import simpmusic.composeapp.generated.resources.*
 import kotlin.reflect.KClass
 
-/**
- * The phone bottom bar with liquid glass OFF: the same floating capsule-and-FAB form as the glass
- * bar, drawn flat. One capsule of tabs (Search stays out — it is the round button beside it, the
- * same split the glass bar makes), a sliding rounded indicator instead of the frosted blob, solid
- * theme surfaces instead of refraction. Geometry mirrors the glass bar so switching the setting
- * changes the material, not the layout: 96dp tab cap, 64dp bar, 56dp indicator and FAB.
- */
+private val AeroBarBackground = Color(0xE60A0A0A)
+private val AeroRainbow = listOf(
+    Color(0xFFFF3B3B),
+    Color(0xFFFF9A3B),
+    Color(0xFFFFE23B),
+    Color(0xFF52E37A),
+    Color(0xFF3BC8FF),
+    Color(0xFF6A6AFF),
+    Color(0xFFB44BFF),
+    Color(0xFFFF3B3B),
+)
+private val AeroSilver = Color(0xFFB8B8B8)
+private val AeroWhite = Color(0xFFFFFFFF)
+private val AeroSelectedGlow = Color(0x33FFFFFF)
+private val AeroSelectedBorder = Color(0x66FFFFFF)
+private val AeroTabTopShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+
 @Composable
 fun AppBottomNavigationBar(
     startDestination: Any = HomeDestination,
@@ -52,40 +83,24 @@ fun AppBottomNavigationBar(
     reloadDestinationIfNeeded: (KClass<*>) -> Unit = { _ -> },
 ) {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    // `ordinal` identifies a tab, it is NOT the position — Mix for you and Analytics sit before
-    // Library here while keeping the ordinal they were declared with, so that the numbering stays
-    // stable whether or not those tabs are present.
-    val bottomNavScreens =
-        listOfNotNull(
-            BottomNavScreen.Home,
-            BottomNavScreen.MixForYou.takeIf { showMixForYouTab },
-            BottomNavScreen.Analytics.takeIf { showAnalyticsTab },
-            BottomNavScreen.Library,
-            BottomNavScreen.Search,
-        )
+    val barTabs = listOf(
+        BottomNavScreen.Home,
+        BottomNavScreen.Search,
+        BottomNavScreen.Library,
+    )
     var selectedIndex by rememberSaveable {
         mutableIntStateOf(
             when (startDestination) {
                 is HomeDestination -> BottomNavScreen.Home.ordinal
                 is SearchDestination -> BottomNavScreen.Search.ordinal
                 is LibraryDestination -> BottomNavScreen.Library.ordinal
-                is AnalyticsDestination -> BottomNavScreen.Analytics.ordinal
-                is MixForYouDestination -> BottomNavScreen.MixForYou.ordinal
-                else -> BottomNavScreen.Home.ordinal // Default to Home if not recognized
+                is AnalyticsDestination -> BottomNavScreen.Home.ordinal
+                is MixForYouDestination -> BottomNavScreen.Home.ordinal
+                else -> BottomNavScreen.Home.ordinal
             },
         )
     }
-    // A tab can disappear from the list under the user: tracking gets turned off while Analytics is
-    // selected, or the YouTube session ends while Mix for you is. Fall back to Home in both cases so
-    // nothing is left highlighted.
-    LaunchedEffect(showAnalyticsTab, showMixForYouTab) {
-        if ((!showAnalyticsTab && selectedIndex == BottomNavScreen.Analytics.ordinal) ||
-            (!showMixForYouTab && selectedIndex == BottomNavScreen.MixForYou.ordinal)
-        ) {
-            selectedIndex = BottomNavScreen.Home.ordinal
-        }
-    }
-    val selectTab: (BottomNavScreen) -> Unit = { screen ->
+    fun selectTab(screen: BottomNavScreen) {
         if (selectedIndex == screen.ordinal) {
             if (currentBackStackEntry?.destination?.hierarchy?.any {
                     it.hasRoute(screen.destination::class)
@@ -107,118 +122,98 @@ fun AppBottomNavigationBar(
         }
     }
 
-    // Search rides in its own circular button, so the capsule holds everything else.
-    val barTabs = bottomNavScreens.filter { it != BottomNavScreen.Search }
-
-    // 85%: the page shows faintly through the floating cluster (the capsule and the search button);
-    // the indicator stays opaque so the selection survives busy artwork.
-    val capsuleColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f)
-    val indicatorColor = MaterialTheme.colorScheme.surfaceContainerHighest
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        // One centred cluster — capsule, gap, FAB — exactly like the glass bar: fill = false keeps
-        // the capsule at its measured width, so the leftover goes around the cluster instead of
-        // wedging itself between the capsule and the search button.
-        horizontalArrangement = Arrangement.Center,
+    Box(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(NavigationBarDefaults.windowInsets)
-                .padding(horizontal = 16.dp)
-                .padding(top = 4.dp, bottom = 8.dp),
+                .padding(WindowInsets.navigationBars.asPaddingValues())
+                .imePadding(),
     ) {
-        BoxWithConstraints(Modifier.weight(1f, fill = false)) {
-            // Every tab the same width, capped so two tabs on a wide screen do not stretch into
-            // slabs — the same budget rule as the glass tab bar.
-            val tabWidth = ((maxWidth - CapsuleInset * 2) / barTabs.size).coerceAtMost(FlatTabWidth)
-            val selectedPosition = barTabs.indexOfFirst { it.ordinal == selectedIndex }
-            val indicatorOffset by animateDpAsState(tabWidth * selectedPosition.coerceAtLeast(0), label = "flatBarIndicator")
-            Box(
-                modifier =
-                    Modifier
-                        .height(FlatBarHeight)
-                        .clip(RoundedCornerShape(FlatBarHeight / 2))
-                        .background(capsuleColor)
-                        .padding(horizontal = CapsuleInset),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                // The sliding indicator — the flat stand-in for the glass bar's frosted blob. Hidden
-                // while Search (a non-capsule tab) is the selection, so nothing sits half-lit.
-                if (selectedPosition >= 0) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .offset(x = indicatorOffset)
-                                .size(width = tabWidth, height = FlatIndicatorHeight)
-                                .clip(RoundedCornerShape(FlatIndicatorHeight / 2))
-                                .background(indicatorColor),
-                    )
-                }
-                Row {
-                    barTabs.forEach { screen ->
-                        val selected = selectedIndex == screen.ordinal
-                        val contentColor =
-                            if (selected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        Column(
-                            modifier =
-                                Modifier
-                                    .width(tabWidth)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(FlatIndicatorHeight / 2))
-                                    .clickable { selectTab(screen) },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            CompositionLocalProvider(LocalContentColor provides contentColor) {
-                                screen.icon()
-                            }
-                            Text(
-                                stringResource(screen.title),
-                                style = typo().bodySmall,
-                                color = contentColor,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.size(12.dp))
-        val searchSelected = selectedIndex == BottomNavScreen.Search.ordinal
         Box(
             modifier =
                 Modifier
-                    .size(FlatIndicatorHeight)
-                    .clip(CircleShape)
-                    .background(if (searchSelected) indicatorColor else capsuleColor)
-                    .clickable { selectTab(BottomNavScreen.Search) },
-            contentAlignment = Alignment.Center,
+                    .fillMaxWidth()
+                    .clip(AeroTabTopShape)
+                    .background(AeroBarBackground)
+                    .border(1.dp, Color(0x33FFFFFF), AeroTabTopShape),
         ) {
-            CompositionLocalProvider(
-                LocalContentColor provides
-                    if (searchSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(Brush.horizontalGradient(AeroRainbow))
+                        .align(Alignment.TopCenter),
+            )
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 10.dp, start = 4.dp, end = 4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                BottomNavScreen.Search.icon()
+                barTabs.forEach { screen ->
+                    val selected = selectedIndex == screen.ordinal
+                    AeroFlatTabItem(
+                        screen = screen,
+                        selected = selected,
+                        modifier = Modifier.weight(1f),
+                        onClick = { selectTab(screen) },
+                    )
+                }
             }
         }
     }
 }
 
-// Mirrors the glass tab bar's geometry (TabWidth/BarHeight/BlobHeight/BarInset in
-// LiquidGlassTabBar.android.kt) so the two bars are one form in two materials.
-private val FlatTabWidth = 96.dp
-private val FlatBarHeight = 64.dp
-private val FlatIndicatorHeight = 56.dp
-private val CapsuleInset = 6.dp
+@Composable
+private fun AeroFlatTabItem(
+    screen: BottomNavScreen,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val contentColor = if (selected) AeroWhite else AeroSilver
+    Column(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(14.dp))
+                .clickable(onClick = onClick)
+                .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) AeroSelectedGlow else Color.Transparent)
+                    .then(
+                        if (selected) {
+                            Modifier.border(1.dp, AeroSelectedBorder, CircleShape)
+                        } else {
+                            Modifier
+                        },
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            CompositionLocalProvider(LocalContentColor provides contentColor) {
+                screen.icon()
+            }
+        }
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = stringResource(screen.title),
+            style = typo().bodySmall.copy(
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
+            color = contentColor,
+            maxLines = 1,
+        )
+    }
+}
 
 @Composable
 fun AppNavigationRail(
@@ -229,98 +224,155 @@ fun AppNavigationRail(
     reloadDestinationIfNeeded: (KClass<*>) -> Unit = { _ -> },
 ) {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    // See the note in AppBottomNavigationBar: `ordinal` is the tab's identity, not its position.
-    val bottomNavScreens =
-        listOfNotNull(
-            BottomNavScreen.Home,
-            BottomNavScreen.MixForYou.takeIf { showMixForYouTab },
-            BottomNavScreen.Analytics.takeIf { showAnalyticsTab },
-            BottomNavScreen.Library,
-            BottomNavScreen.Search,
-        )
+    val railScreens = listOf(
+        BottomNavScreen.Home,
+        BottomNavScreen.Search,
+        BottomNavScreen.Library,
+    )
     var selectedIndex by rememberSaveable {
         mutableIntStateOf(
             when (startDestination) {
                 is HomeDestination -> BottomNavScreen.Home.ordinal
                 is SearchDestination -> BottomNavScreen.Search.ordinal
                 is LibraryDestination -> BottomNavScreen.Library.ordinal
-                is AnalyticsDestination -> BottomNavScreen.Analytics.ordinal
-                is MixForYouDestination -> BottomNavScreen.MixForYou.ordinal
-                else -> BottomNavScreen.Home.ordinal // Default to Home if not recognized
+                is AnalyticsDestination -> BottomNavScreen.Home.ordinal
+                is MixForYouDestination -> BottomNavScreen.Home.ordinal
+                else -> BottomNavScreen.Home.ordinal
             },
         )
     }
-    // A tab can disappear from the list under the user: tracking gets turned off while Analytics is
-    // selected, or the YouTube session ends while Mix for you is. Fall back to Home in both cases so
-    // nothing is left highlighted.
-    LaunchedEffect(showAnalyticsTab, showMixForYouTab) {
-        if ((!showAnalyticsTab && selectedIndex == BottomNavScreen.Analytics.ordinal) ||
-            (!showMixForYouTab && selectedIndex == BottomNavScreen.MixForYou.ordinal)
-        ) {
-            selectedIndex = BottomNavScreen.Home.ordinal
-        }
-    }
-    NavigationRail {
-        Spacer(Modifier.height(16.dp))
-        Box(Modifier.padding(horizontal = 16.dp)) {
-            Box(
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                contentAlignment = Alignment.Center,
+    fun selectScreen(screen: BottomNavScreen) {
+        if (selectedIndex == screen.ordinal) {
+            if (currentBackStackEntry?.destination?.hierarchy?.any {
+                    it.hasRoute(screen.destination::class)
+                } == true
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.mono),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .height(32.dp)
-                            .clip(CircleShape),
-                )
+                reloadDestinationIfNeeded(screen.destination::class)
+            } else {
+                navController.navigate(screen.destination)
+            }
+        } else {
+            selectedIndex = screen.ordinal
+            navController.navigate(screen.destination) {
+                popUpTo(navController.graph.startDestinationId) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
             }
         }
-        Spacer(Modifier.weight(1f))
-        bottomNavScreens.forEach { screen ->
-            NavigationRailItem(
-                icon = screen.icon,
-                label = {
-                    Text(
-                        stringResource(screen.title),
-                        style =
-                            if (selectedIndex == screen.ordinal) {
-                                typo().bodySmall
-                            } else {
-                                typo().bodySmall.greyScale()
-                            },
-                    )
-                },
-                selected = selectedIndex == screen.ordinal,
-                onClick = {
-                    if (selectedIndex == screen.ordinal) {
-                        if (currentBackStackEntry?.destination?.hierarchy?.any {
-                                it.hasRoute(screen.destination::class)
-                            } == true
-                        ) {
-                            reloadDestinationIfNeeded(
-                                screen.destination::class,
-                            )
-                        } else {
-                            navController.navigate(screen.destination)
-                        }
-                    } else {
-                        selectedIndex = screen.ordinal
-                        navController.navigate(screen.destination) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                },
+    }
+
+    if (getPlatform() == Platform.Desktop) {
+        val sidebarShape = RoundedCornerShape(12.dp)
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .width(240.dp)
+                    .padding(8.dp)
+                    .clip(sidebarShape)
+                    .background(AeroBarBackground)
+                    .border(1.dp, Color(0x33FFFFFF), sidebarShape)
+                    .padding(horizontal = 12.dp, vertical = 18.dp),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(Brush.horizontalGradient(AeroRainbow)),
             )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.aero_final),
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp).clip(CircleShape),
+                )
+                Text(
+                    text = stringResource(Res.string.app_name),
+                    style = typo().titleMedium,
+                    color = AeroWhite,
+                    maxLines = 1,
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+            railScreens.forEach { screen ->
+                val selected = selectedIndex == screen.ordinal
+                val itemColor = if (selected) AeroWhite else AeroSilver
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selected) AeroSelectedGlow else Color.Transparent)
+                            .clickable { selectScreen(screen) }
+                            .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    CompositionLocalProvider(LocalContentColor provides itemColor) {
+                        screen.icon()
+                    }
+                    Text(
+                        text = stringResource(screen.title),
+                        style = typo().bodyMedium.copy(
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        ),
+                        color = itemColor,
+                        maxLines = 1,
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+            }
         }
-        Spacer(Modifier.height(32.dp))
+    } else {
+        NavigationRail {
+            Spacer(Modifier.height(16.dp))
+            Box(Modifier.padding(horizontal = 16.dp)) {
+                Box(
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.aero_final),
+                        contentDescription = null,
+                        modifier =
+                            Modifier
+                                .height(32.dp)
+                                .clip(CircleShape),
+                    )
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            railScreens.forEach { screen ->
+                NavigationRailItem(
+                    icon = screen.icon,
+                    label = {
+                        Text(
+                            stringResource(screen.title),
+                            style =
+                                if (selectedIndex == screen.ordinal) {
+                                    typo().bodySmall
+                                } else {
+                                    typo().bodySmall.greyScale()
+                                },
+                        )
+                    },
+                    selected = selectedIndex == screen.ordinal,
+                    onClick = { selectScreen(screen) },
+                )
+            }
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }

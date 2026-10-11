@@ -1,5 +1,11 @@
 package com.maxrave.simpmusic.ui.component
 
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -1035,36 +1041,133 @@ fun MoodMomentAndGenreHomeItem(
     fillMaxWidth: Boolean = false,
     onClick: () -> Unit,
 ) {
-    ElevatedCard(
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 6.dp,
-            ),
-        onClick = onClick,
-        shape = RoundedCornerShape(5.dp),
+    // AeroPlay translucent chrome pill — glass, not painted metal.
+    val chromeShape = RoundedCornerShape(20.dp)
+    // Base fill: semi-transparent silver so the disc/background shows through.
+    // Alpha values are what make it "translucent" — tune these to taste.
+    val chromeGradient =
+        Brush.verticalGradient(
+            0.00f to Color(0x99FFFFFF), // top: bright, lightly opaque
+            0.50f to Color(0x66B0B0B0), // mid: mid-tone silver, more see-through
+            0.85f to Color(0x66808080),
+            1.00f to Color(0x99555555), // bottom: darker, still see-through
+        )
+    // Bright specular sheen on the top ~45%. Kept fairly strong because translucent
+    // chrome needs a bright highlight to read as glass.
+    val topSheen =
+        Brush.verticalGradient(
+            0.00f to Color(0xAAFFFFFF),
+            0.30f to Color(0x44FFFFFF),
+            0.55f to Color(0x00FFFFFF),
+        )
+    // Razor-thin bright line at the very top edge — the "wet" line of glass.
+    val topEdgeGlow =
+        Brush.verticalGradient(
+            0.00f to Color(0xFFFFFFFF),
+            0.10f to Color(0x88FFFFFF),
+            0.14f to Color(0x00FFFFFF),
+        )
+    // Diagonal shine sweeping across the pill.
+    val diagonalShine =
+        Brush.linearGradient(
+            colors =
+                listOf(
+                    Color(0x00FFFFFF),
+                    Color(0x33FFFFFF),
+                    Color(0x00FFFFFF),
+                ),
+            start = Offset(0f, 0f),
+            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        )
+    Box(
         modifier =
             (if (fillMaxWidth) Modifier.fillMaxWidth() else Modifier.width(160.dp))
                 .height(50.dp)
-                .padding(8.dp),
+                .padding(8.dp)
+                .clip(chromeShape)
+                .background(chromeGradient)
+                // No solid outer border — a bright translucent one keeps it glassy.
+                .border(1.dp, Color(0x99FFFFFF), chromeShape)
+                .clickable { onClick() },
+        contentAlignment = Alignment.CenterStart,
     ) {
-        Row {
-            Box(
-                // `solid.leftStripeColor` straight from the API (full ARGB). This used to be
-                // generateRandomColor(), which — being outside remember — rolled a new colour on
-                // every recomposition, so the stripes flickered while scrolling.
+        // Layer 1: top sheen.
+        Box(
+            modifier =
                 Modifier
-                    .width(10.dp)
-                    .height(64.dp)
-                    .background(Color(stripeColor)),
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.5f)
+                    .align(Alignment.TopCenter)
+                    .background(topSheen),
+        )
+        // Layer 2: top edge glow.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.14f)
+                    .align(Alignment.TopCenter)
+                    .background(topEdgeGlow),
+        )
+        // Layer 3: diagonal shine.
+        Box(
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .background(diagonalShine),
+        )
+        // Layer 4: soft dark edge at the bottom for depth.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.20f)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color(0x00000000),
+                            1f to Color(0x66000000),
+                        ),
+                    ),
+        )
+        // Layer 5: inner bright edge just inside the border — glass rim.
+        Box(
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .padding(1.dp)
+                    .border(1.dp, Color(0x44FFFFFF), chromeShape),
+        )
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .padding(start = 4.dp)
+                        .width(10.dp)
+                        .fillMaxHeight(0.65f)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(stripeColor))
+                        .border(1.dp, Color(0xCCFFFFFF), RoundedCornerShape(6.dp)),
             )
             Text(
                 text = title,
-                style = typo().titleSmall,
+                style = typo().titleSmall.copy(
+                    shadow = Shadow(
+                        color = Color(0xAA000000),
+                        offset = Offset(0f, 1f),
+                        blurRadius = 2f,
+                    ),
+                ),
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = Color.White,
+                maxLines = 1,
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .padding(start = 4.dp, end = 8.dp)
                         .align(Alignment.CenterVertically),
             )
         }

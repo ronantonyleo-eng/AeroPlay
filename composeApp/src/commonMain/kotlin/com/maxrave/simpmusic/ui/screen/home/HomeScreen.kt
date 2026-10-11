@@ -1,5 +1,8 @@
 package com.maxrave.simpmusic.ui.screen.home
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.Image
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -171,6 +174,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import simpmusic.composeapp.generated.resources.Res
+import simpmusic.composeapp.generated.resources.aero_bg
 import simpmusic.composeapp.generated.resources.all
 import simpmusic.composeapp.generated.resources.app_name
 import simpmusic.composeapp.generated.resources.cancel
@@ -571,38 +575,30 @@ fun HomeScreen(
                         )
                         return@Crossfade
                     }
-                    LazyColumn(
-                        state = scrollState,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
                     ) {
+                        Image(
+                            painter = painterResource(Res.drawable.aero_bg),
+                            contentDescription = null,
+                            modifier = Modifier.matchParentSize(),
+                            contentScale = ContentScale.FillBounds,
+                            alpha = 0.35f,
+                        )
+
+                        LazyColumn(
+                            state = scrollState,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                         itemsIndexed(homeData, key = { _, item ->
                             item.hashCode().toString() + (mainHomeThumbnail ?: "nothumb")
                         }) { index, item ->
                             Box {
                                 if (index == 0) {
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                // matchParentSize, not height(300.dp): 300 is the
-                                                // height of this shelf ON A PHONE. On a desktop
-                                                // window the first item is taller, the gradient
-                                                // stopped mid-item and everything below it fell
-                                                // back to the flat background — a hard colour seam
-                                                // straight across Home. Sized by the item, the
-                                                // bottom scrim always lands on the item's edge.
-                                                .matchParentSize()
-                                                .angledGradientBackground(listOf(animatedColor, pageBackground), 25f),
-                                    ) {
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .height(180.dp)
-                                                    .align(Alignment.BottomCenter)
-                                                    .background(artworkScrimBrush(pageBackground)),
-                                        )
-                                    }
-                                }
+    // AeroPlay: no gradient overlay — let the disc show through the whole header.
+    // Kept as an empty Box so the surrounding structure stays identical.
+    Box(modifier = Modifier.matchParentSize())
+}
                                 Column(
                                     modifier =
                                         Modifier
@@ -779,6 +775,7 @@ fun HomeScreen(
                             EndOfPage()
                         }
                     }
+                }
                 } else {
                     Column {
                         Spacer(

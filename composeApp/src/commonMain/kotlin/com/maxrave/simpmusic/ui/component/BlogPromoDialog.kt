@@ -1,13 +1,16 @@
 package com.maxrave.simpmusic.ui.component
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.maxrave.simpmusic.ui.theme.typo
 import org.jetbrains.compose.resources.painterResource
@@ -16,7 +19,7 @@ import simpmusic.composeapp.generated.resources.Res
 import simpmusic.composeapp.generated.resources.blog_promo_message
 import simpmusic.composeapp.generated.resources.blog_promo_title
 import simpmusic.composeapp.generated.resources.later
-import simpmusic.composeapp.generated.resources.mono
+import simpmusic.composeapp.generated.resources.aero_final
 import simpmusic.composeapp.generated.resources.visit_blog
 
 @Composable
@@ -57,7 +60,11 @@ fun BlogPromoDialog(
             }
         },
         icon = {
-            Icon(painterResource(Res.drawable.mono), "App Icon")
+            Image(
+                painter = painterResource(Res.drawable.aero_final),
+                contentDescription = "App Icon",
+                modifier = Modifier.size(48.dp),
+            )
         },
         title = {
             Text(

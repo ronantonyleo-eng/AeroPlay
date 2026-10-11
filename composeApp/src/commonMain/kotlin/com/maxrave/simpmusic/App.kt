@@ -368,7 +368,7 @@ fun App(
         if (viewModel.showedUpdateDialog &&
             response.tagName != getString(Res.string.version_format, VersionManager.getVersionName())
         ) {
-            shouldShowUpdateDialog = true
+            shouldShowUpdateDialog = false
         }
     }
 

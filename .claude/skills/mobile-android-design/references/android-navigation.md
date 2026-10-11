@@ -124,9 +124,8 @@ enum class BottomNavDestination(
     val label: String
 ) {
     HOME(Home, Icons.Default.Home, "Home"),
-    SEARCH(Search, Icons.Default.Search, "Search"),
-    FAVORITES(Favorites, Icons.Default.Favorite, "Favorites"),
-    PROFILE(Profile, Icons.Default.Person, "Profile")
+    LIBRARY(Library, Icons.Default.LibraryMusic, "Library"),
+    SEARCH(Search, Icons.Default.Search, "Search")
 }
 
 @Composable
@@ -137,30 +136,60 @@ fun MainScreenWithBottomNav() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                BottomNavDestination.entries.forEach { destination ->
-                    NavigationBarItem(
-                        icon = {
-                            Icon(destination.icon, contentDescription = destination.label)
-                        },
-                        label = { Text(destination.label) },
-                        selected = currentDestination?.hasRoute(destination.route::class) == true,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                // Pop up to start destination to avoid building up stack
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                // Avoid multiple copies of same destination
-                                launchSingleTop = true
-                                // Restore state when reselecting
-                                restoreState = true
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = 16.dp,
+                vertical = 10.dp
+            )
+    ) {
+        NavigationBar(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp)),
+            containerColor = Color.Black.copy(alpha = 0.75f),
+            tonalElevation = 0.dp
+        ) {
+            BottomNavDestination.entries.forEach { destination ->
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.label
+                        )
+                    },
+                    label = {
+                        Text(destination.label)
+                    },
+                    selected =
+                        currentDestination?.hasRoute(
+                            destination.route::class
+                        ) == true,
+                    onClick = {
+                        navController.navigate(destination.route) {
+                            popUpTo(
+                                navController.graph.findStartDestination().id
+                            ) {
+                                saveState = true
                             }
+
+                            launchSingleTop = true
+                            restoreState = true
                         }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = Color.White.copy(alpha = 0.12f),
+                        selectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
+                        unselectedIconColor = Color.LightGray,
+                        unselectedTextColor = Color.LightGray
                     )
-                }
+                )
             }
         }
+    }
+}
     ) { innerPadding ->
         NavHost(
             navController = navController,

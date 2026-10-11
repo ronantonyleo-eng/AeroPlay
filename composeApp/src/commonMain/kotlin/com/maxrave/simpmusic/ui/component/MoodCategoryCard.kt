@@ -1,5 +1,6 @@
 package com.maxrave.simpmusic.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -26,7 +27,7 @@ import com.maxrave.simpmusic.extension.angledGradientBackground
 import com.maxrave.simpmusic.ui.theme.typo
 import org.jetbrains.compose.resources.painterResource
 import simpmusic.composeapp.generated.resources.Res
-import simpmusic.composeapp.generated.resources.monochrome
+import simpmusic.composeapp.generated.resources.aero_final
 
 /**
  * A "Moods & Genres" browse category tile: the [playlistTitleGradient] and SimpMusic badge of an
@@ -43,17 +44,21 @@ fun MoodCategoryCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val badge = painterResource(Res.drawable.monochrome)
-    Box(
+    val badge = painterResource(Res.drawable.aero_final)
+      Box(
         modifier =
             modifier
                 .fillMaxWidth()
                 .aspectRatio(2f)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(14.dp))
+                // The tile's own colour is kept as a very faint tint...
                 .angledGradientBackground(
-                    colors = playlistTitleGradient(title),
+                    colors = playlistTitleGradient(title).map { it.copy(alpha = 0.20f) },
                     degrees = 45f,
-                ).drawBehind {
+                )
+                // ...with translucent dark glass on top of it.
+                .background(Color(0x22000000), RoundedCornerShape(14.dp))
+                .drawBehind {
                     // PlaylistThumbnailPainter sizes the badge off the width because its tile is
                     // square. This one is 2:1, so the same fractions would double it — anchor on
                     // the height instead to keep the badge the size the eye expects.

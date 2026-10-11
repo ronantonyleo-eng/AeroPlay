@@ -80,7 +80,6 @@ sealed class BottomNavScreen(
         },
     )
 
-    // Only shown when local tracking is enabled.
     data object Analytics : BottomNavScreen(
         ordinal = 3,
         destination = AnalyticsDestination,
@@ -93,9 +92,6 @@ sealed class BottomNavScreen(
         },
     )
 
-    // Only shown while signed in to YouTube — an anonymous session gets no mixes.
-    // Labelled "Mix", not "Mix for you": the full title is the widest label in the bar and forces
-    // every tab to be that wide. The screen itself still uses the full title.
     data object MixForYou : BottomNavScreen(
         ordinal = 4,
         destination = MixForYouDestination,

@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.maxrave.logger.Logger
 import org.jetbrains.compose.resources.painterResource
 import simpmusic.composeapp.generated.resources.Res
-import simpmusic.composeapp.generated.resources.monochrome
+import simpmusic.composeapp.generated.resources.aero_final
 import kotlin.math.abs
 
 @Composable
@@ -213,7 +213,7 @@ fun painterPlaylistThumbnail(
                     ),
             )
         }
-    val painterRes = painterResource(Res.drawable.monochrome)
+    val painterRes = painterResource(Res.drawable.aero_final)
     return PlaylistThumbnailPainter(
         size = Size(
             width = with(density) { sizeDp.first.toPx() },

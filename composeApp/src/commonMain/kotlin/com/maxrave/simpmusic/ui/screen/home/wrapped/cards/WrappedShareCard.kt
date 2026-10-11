@@ -1,5 +1,6 @@
 package com.maxrave.simpmusic.ui.screen.home.wrapped.cards
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import simpmusic.composeapp.generated.resources.Res
-import simpmusic.composeapp.generated.resources.mono
+import simpmusic.composeapp.generated.resources.aero_final
 import simpmusic.composeapp.generated.resources.wrapped_archetype_deep_diver
 import simpmusic.composeapp.generated.resources.wrapped_archetype_devotee
 import simpmusic.composeapp.generated.resources.wrapped_archetype_explorer
@@ -336,7 +337,7 @@ private fun PosterLabel(
  * the ink the panel writes in (`onSurface`) and the logo prints back through it in the panel's own
  * ground (`surface`), which is what keeps the mark readable whatever the artwork seeded.
  *
- * `Res.drawable.mono` is the app's logo, not an icon: `SimpIcons` is the Material Symbols set and
+ * `Res.drawable.aero_final` is the app's logo, not an icon: `SimpIcons` is the Material Symbols set and
  * has no wordmark in it, and CLAUDE.md keeps the two logos as drawables on purpose. This is the
  * only `painterResource` left in the file.
  */
@@ -358,21 +359,11 @@ private fun PosterSignature(wrapped: WrappedYear) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurface),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.mono),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.size(10.dp),
-                )
-            }
+            Image(
+                painter = painterResource(Res.drawable.aero_final),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
             Text(
                 // A brand name, not copy — it is spelled this way in every language, exactly as
                 // the lyrics share card spells it, and set in the same muted weight it uses there.
